@@ -2,6 +2,7 @@ import socket
 import threading
 import logging
 from datetime import datetime
+from mapa import Mapa  # Importe a classe Mapa
 
 class Servidor:
     def __init__(self, host='localhost', port=8080):
@@ -9,7 +10,7 @@ class Servidor:
         self.port = port
         self.clientes = []
         self.lock = threading.Lock()
-        self.mapa_estado = [[False] * 8 for _ in range(8)]  # Estado inicial do mapa
+        self.mapa = Mapa(None, servidor=self)  # Crie uma instância do Mapa sem janela
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     def iniciar(self):
@@ -34,44 +35,32 @@ class Servidor:
         client_address = cliente.getpeername()
         self.enviar_estado_inicial(cliente)
         try:
-            while True:
+            while True: 
                 try:
                     msg = cliente.recv(1024).decode('utf-8')
                     if not msg:
                         break
                     self.log_acao(msg, client_address)
-                    self.tratar_mensagem(msg, cliente)
+                    self.tratar_mensagem(msg, cliente, client_address)
                 except socket.error as e:
-                    logging.error(f"Erro de socket ao receber mensagem: {e}")
-                    break
+                    pass
         finally:
-            if cliente in self.clientes:
-                self.clientes.remove(cliente)
-            cliente.close()
+            self.remover_cliente(cliente, client_address)
 
-    def tratar_mensagem(self, msg, cliente):
-        """
-        Lida com mensagens recebidas dos clientes.
-
-        Formatos de mensagem esperados:
-        - "COLETAR_TESOURO": Indica uma solicitação para coletar um tesouro
-        - "SAIR_DO_JOGO": Indica uma solicitação para sair do jogo
-
-        Args:
-            msg (str): A mensagem recebida do cliente.
-            cliente (socket.socket): O socket do cliente que enviou a mensagem.
-        """
+    def tratar_mensagem(self, msg, cliente, client_address):
         if msg.startswith("COLETAR_TESOURO"):
             _, x, y = msg.split()
             x, y = int(x), int(y)
-            with self.lock:
-                self.mapa_estado[x][y] = True
-            self.broadcast(msg, cliente)
-        elif msg.startswith("SAIR_DO_JOGO"):
-            self.remover_cliente(cliente)
-        # aqui podemos fazer outros tratamentos de mensagens caso necessário
+            with self.mapa.semaforos_celulas[x][y]:  # Protege a célula específica
+                if self.mapa.mapa_estado[x][y]:  # Verifica se o tesouro ainda está disponível
+                    self.mapa.mapa_estado[x][y] = False
+                    self.broadcast(msg, cliente)
+                    logging.info(f"O Jogador {client_address} coletou um tesouro: {msg}")
+        elif msg == "SAIR_DO_JOGO":
+            self.remover_cliente(cliente, client_address)
+            logging.info(f"O Jogador {client_address} saiu do jogo.")
 
-    def remover_cliente(self, cliente):
+    def remover_cliente(self, cliente, client_address=None):
         if cliente in self.clientes:
             self.clientes.remove(cliente)
         cliente.close()
@@ -82,17 +71,18 @@ class Servidor:
                 try:
                     cliente.send(msg.encode('utf-8'))
                 except socket.error as e:
-                    print(f"Erro ao enviar mensagem para {cliente.getpeername()}: {e}")
+                    logging.error(f"Erro ao enviar mensagem para {cliente.getpeername()}: {e}")
                     self.remover_cliente(cliente)
 
     def log_acao(self, msg, client_address):
-        print(f"O jogador {client_address}: {msg}")
+        logging.info(f"O jogador {client_address}: {msg}")
 
     def enviar_estado_inicial(self, cliente):
-        for i in range(8):
-            for j in range(8):
-                if self.mapa_estado[i][j]:
-                    cliente.send(f"COLETAR_TESOURO {i} {j}".encode('utf-8'))
+        with self.lock:  # Protege o acesso ao estado do mapa
+            for i in range(8):
+                for j in range(8):
+                    if self.mapa.mapa_estado[i][j]:
+                        cliente.send(f"COLETAR_TESOURO {i} {j}".encode('utf-8'))
 
 if __name__ == "__main__":
     servidor = Servidor()
