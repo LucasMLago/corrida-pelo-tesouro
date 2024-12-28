@@ -67,7 +67,7 @@ class Mapa:
             self.salas_tesouro[(x, y)] -= 1
             print(f"Tesouros restantes na sala ({x}, {y}): {self.salas_tesouro[(x, y)]}")
             if self.salas_tesouro[(x, y)] == 0:
-                print(f"Todos os tesouros da sala ({x}, {y}) foram coletados!")
+                print(f"Todos os tesouros da sala ({x}, {y}) foram coletados")
             return True
         return False
 
@@ -76,4 +76,4 @@ class Mapa:
         Libera a sala do tesouro.
         """
         self.sala_semaforos[(x, y)].release()
-        print(f"Jogador saiu da sala do tesouro em ({x}, {y})!")
+        print(f"Jogador saiu da sala do tesouro em ({x}, {y})")
