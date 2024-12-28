@@ -45,14 +45,14 @@ class Mapa:
                 self.tesouros_restantes -= 1
                 print(f"Tesouros restantes no mapa principal: {self.tesouros_restantes}")
                 if self.tesouros_restantes == 0:
-                    print("Todos os tesouros do mapa principal foram coletados!")
+                    print("Todos os tesouros do mapa principal foram coletados")
 
     def acessar_sala_do_tesouro(self, x, y):
         """
         Controla o acesso à sala do tesouro específica.
         """
         if self.sala_semaforos[(x, y)].acquire(blocking=False):
-            print(f"Jogador entrou na sala do tesouro em ({x}, {y})!")
+            print(f"Jogador entrou na sala do tesouro em ({x}, {y})")
             return True
         else:
             print("A sala do tesouro está ocupada. Aguarde sua vez.")
