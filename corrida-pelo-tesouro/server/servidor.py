@@ -2,7 +2,11 @@ import socket
 import threading
 import logging
 from datetime import datetime
-from mapa import Mapa
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from map.mapa import Mapa
 
 class Servidor:
     """
@@ -31,11 +35,11 @@ class Servidor:
 
         try:
             while True:
-                cliente, client_address = self.sock.accept()
+                client_socket, client_address = self.sock.accept()
                 logging.info(f"Conexão estabelecida com {client_address}")
                 with self.lock:
-                    self.clientes.append(cliente)
-                threading.Thread(target=self.tratar_cliente, args=(cliente,)).start()
+                    self.clientes.append(client_socket)
+                threading.Thread(target=self.tratar_cliente, args=(client_socket,)).start()
         except KeyboardInterrupt:
             logging.info("Servidor interrompido pelo usuário.")
         finally:
@@ -45,7 +49,7 @@ class Servidor:
         """
         Trata a comunicação com um cliente específico.
         """
-        client_address = cliente.getpeername()
+        client_address = cliente.getpeername()[1]
         self.enviar_estado_inicial(cliente)
         try:
             while True:
@@ -100,14 +104,15 @@ class Servidor:
         """
         Registra uma ação realizada por um cliente.
         """
-        logging.info(f"O jogador {client_address}: {msg}")
+        if "SAIR_DO_JOGO" not in msg:
+            logging.info(f"O Jogador {client_address}: {msg}")
 
     def enviar_estado_inicial(self, cliente):
         """
         Envia o estado inicial do mapa para um cliente recém-conectado.
         """
         with self.lock:
-            for i in range 8):
+            for i in range(8):
                 for j in range(8):
                     if self.mapa.mapa_estado[i][j]:
                         cliente.send(f"COLETAR_TESOURO {i} {j}".encode('utf-8'))
