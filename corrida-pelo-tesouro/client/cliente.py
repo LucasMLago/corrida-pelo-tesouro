@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from map.mapa import Mapa
+from models.jogo import Jogo
 
 class Cliente:
     """
@@ -21,8 +21,39 @@ class Cliente:
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
-        self.mapa = None
-        threading.Thread(target=self.receber_mensagens).start()
+        self.janela = tk.Tk()
+        self.jogo = Jogo(self.janela, cliente=self)
+        threading.Thread(target=self.ouvir_servidor).start()
+
+    def ouvir_servidor(self):
+        """
+        Ouve mensagens do servidor.
+        """
+        while True:
+            try:
+                msg = self.sock.recv(1024).decode('utf-8')
+                if not msg:
+                    break
+                self.tratar_mensagem(msg)
+            except socket.error:
+                break
+
+    def tratar_mensagem(self, msg):
+        """
+        Trata as mensagens recebidas do servidor.
+        """
+        if msg.startswith("COLETAR_TESOURO"):
+            _, x, y = msg.split()
+            x, y = int(x), int(y)
+            self.jogo.coletar_tesouro(x, y, atualizar_servidor=False)
+        elif msg.startswith("ENTRAR_SALA"):
+            _, x, y = msg.split()
+            x, y = int(x), int(y)
+            self.jogo.acessar_sala_do_tesouro(x, y)
+        elif msg.startswith("COLETAR_TESOURO_SALA"):
+            _, x, y, idx = msg.split()
+            x, y, idx = int(x), int(y), int(idx)
+            self.jogo.coletar_tesouro_sala(x, y, idx)
 
     def enviar_mensagem(self, msg):
         """
@@ -37,47 +68,7 @@ class Cliente:
         self.enviar_mensagem("SAIR_DO_JOGO")
         self.sock.close()
 
-    def receber_mensagens(self):
-        """
-        Recebe mensagens do servidor.
-        """
-        while True:
-            try:
-                msg = self.sock.recv(1024).decode('utf-8')
-                if msg:
-                    print(f"Mensagem recebida: {msg}")
-                    self.tratar_mensagem(msg)
-            except:
-                print("Conexão com o servidor perdida.")
-                self.sock.close()
-                break
-
-    def tratar_mensagem(self, msg):
-        """
-        Trata as mensagens recebidas do servidor.
-        """
-        if msg.startswith("COLETAR_TESOURO"):
-            _, x, y = msg.split()
-            x, y = int(x), int(y)
-            if self.mapa:
-                self.mapa.coletar_tesouro(x, y, atualizar_servidor=False)
-
-    @staticmethod
-    def centralizar_janela(janela, largura, altura):
-        """
-        Centraliza a janela na tela.
-        """
-        largura_tela = janela.winfo_screenwidth()
-        altura_tela = janela.winfo_screenheight()
-        x = (largura_tela - largura) // 2
-        y = (altura_tela - altura) // 2
-        janela.geometry(f"{largura}x{altura}+{x}+{y}")
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     cliente = Cliente()
-    janela = tk.Tk()
-    mapa = Mapa(janela, cliente)
-    cliente.mapa = mapa
-    janela.protocol("WM_DELETE_WINDOW", cliente.sair_do_jogo)
-    janela.mainloop()
+    cliente.janela.mainloop()

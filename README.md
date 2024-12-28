@@ -25,6 +25,7 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
     ```sh
     python servidor.py
     ```
+3. O mapa será criado na ativação do servidor.
 
 ### Cliente
 
@@ -36,6 +37,7 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
     ```sh
     python cliente.py
     ```
+3. Todos os clientes se conectam ao mesmo mapa.
 
 ## Funcionalidades
 

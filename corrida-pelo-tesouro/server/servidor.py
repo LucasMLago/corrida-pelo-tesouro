@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from map.mapa import Mapa
+from models.mapa import Mapa
 
 class Servidor:
     """
@@ -21,7 +21,7 @@ class Servidor:
         self.port = port
         self.clientes = []
         self.lock = threading.Lock()
-        self.mapa = Mapa(None, servidor=self)
+        self.mapa = Mapa()
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     def iniciar(self):
@@ -71,11 +71,23 @@ class Servidor:
         if msg.startswith("COLETAR_TESOURO"):
             _, x, y = msg.split()
             x, y = int(x), int(y)
-            with self.mapa.semaforos_celulas[x][y]:
-                if self.mapa.mapa_estado[x][y]:
-                    self.mapa.mapa_estado[x][y] = False
-                    self.broadcast(msg, cliente)
-                    logging.info(f"O Jogador {client_address} coletou um tesouro: {msg}")
+            self.mapa.coletar_tesouro(x, y)
+            self.broadcast(msg, cliente)
+            logging.info(f"O Jogador {client_address} coletou um tesouro: {msg}")
+        elif msg.startswith("ACESSAR_SALA"):
+            _, x, y = msg.split()
+            x, y = int(x), int(y)
+            if self.mapa.acessar_sala_do_tesouro(x, y):
+                cliente.send(f"ENTRAR_SALA {x} {y}".encode('utf-8'))
+        elif msg.startswith("COLETAR_TESOURO_SALA"):
+            _, x, y, idx = msg.split()
+            x, y, idx = int(x), int(y), int(idx)
+            if self.mapa.coletar_tesouro_sala(x, y, idx):
+                self.broadcast(msg, cliente)
+        elif msg.startswith("SAIR_SALA"):
+            _, x, y = msg.split()
+            x, y = int(x), int(y)
+            self.mapa.liberar_sala(x, y)
         elif msg == "SAIR_DO_JOGO":
             self.remover_cliente(cliente, client_address)
             logging.info(f"O Jogador {client_address} saiu do jogo.")

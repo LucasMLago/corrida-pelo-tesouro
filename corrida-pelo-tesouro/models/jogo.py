@@ -1,55 +1,39 @@
 import tkinter as tk
 import threading
-import random
+import sys
+import os
 
-# Configurações do mapa
-LINHAS = 8
-COLUNAS = 8
-TESOUROS_SALA = 16
-TESOUROS_MAPA = 8
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models.mapa import Mapa, LINHAS, COLUNAS, encerrar_threads
 
-# Flag global para controlar as threads
-encerrar_threads = False
-
-class Mapa:
+class Jogo:
     """
-    Classe que representa o mapa do jogo.
+    Classe que representa o jogo.
     """
 
     def __init__(self, janela, cliente=None, servidor=None):
         """
-        Inicializa o mapa.
+        Inicializa o jogo.
         """
         self.cliente = cliente
         self.servidor = servidor
+        self.mapa = servidor.mapa if servidor else Mapa()
         self.janela = janela
-        if not hasattr(self, 'mapa_estado'):
-            self.mapa_estado = [[False for _ in range(COLUNAS)] for _ in range(LINHAS)]
-        self.tesouros_restantes = TESOUROS_MAPA
-        self.mutex_global = threading.Lock()
-        self.semaforos_celulas = [[threading.Semaphore(1) for _ in range(COLUNAS)] for _ in range(LINHAS)]
-        self.salas_tesouro = {}
-        self.sala_semaforos = {}
-        self.sala_estados = {}
         self.buttons = []
-        self.tesouros_mapa = set(random.sample([(i, j) for i in range(LINHAS) for j in range(COLUNAS)], TESOUROS_MAPA))
         self.timer = None
-        
+
         if self.janela:
             self.janela.title("Corrida Pelo Tesouro - Mapa")
             self.centralizar_janela(self.janela, 525, 608)
             for i in range(LINHAS):
                 row = []
                 for j in range(COLUNAS):
-                    if (i, j) in self.tesouros_mapa:
+                    if (i, j) in self.mapa.tesouros_mapa:
                         botao = tk.Button(janela, width=8, height=4, bg="gold", 
                                           command=lambda x=i, y=j: self.coletar_tesouro(x, y))
                     else:
                         botao = tk.Button(janela, width=8, height=4, bg="white", 
                                           command=lambda x=i, y=j: self.opcao_sala_do_tesouro(x, y))
-                        self.salas_tesouro[(i, j)] = TESOUROS_SALA
-                        self.sala_semaforos[(i, j)] = threading.Semaphore(1)
-                        self.sala_estados[(i, j)] = [True] * TESOUROS_SALA
                     botao.grid(row=i, column=j)
                     row.append(botao)
                 self.buttons.append(row)
@@ -72,18 +56,18 @@ class Mapa:
         Coleta um tesouro do mapa principal.
         """
         if self.janela and self.buttons[x][y]["bg"] == "gold":
-            with self.semaforos_celulas[x][y]:
+            with self.mapa.semaforos_celulas[x][y]:
                 if self.buttons[x][y]["bg"] == "gold":
                     self.buttons[x][y]["state"] = "disabled"
                     self.buttons[x][y]["bg"] = "gray"
-                    self.tesouros_restantes -= 1
+                    self.mapa.tesouros_restantes -= 1
                     if self.cliente and atualizar_servidor:
                         self.cliente.enviar_mensagem(f"COLETAR_TESOURO {x} {y}")
                     if self.servidor:
-                        self.servidor.mapa_estado[x][y] = False
-                    print(f"Tesouros restantes no mapa principal: {self.tesouros_restantes}")
+                        self.servidor.mapa.mapa_estado[x][y] = False
+                    print(f"Tesouros restantes no mapa principal: {self.mapa.tesouros_restantes}")
 
-                    if self.tesouros_restantes == 0:
+                    if self.mapa.tesouros_restantes == 0:
                         print("Todos os tesouros do mapa principal foram coletados!")
 
     def opcao_sala_do_tesouro(self, x, y):
@@ -105,11 +89,8 @@ class Mapa:
         """
         Controla o acesso à sala do tesouro específica.
         """
-        if self.sala_semaforos[(x, y)].acquire(blocking=False):
-            print(f"Jogador entrou na sala do tesouro em ({x}, {y})!")
+        if self.mapa.acessar_sala_do_tesouro(x, y):
             self.abrir_sala_do_tesouro(x, y)
-        else:
-            print("A sala do tesouro está ocupada. Aguarde sua vez.")
 
     def abrir_sala_do_tesouro(self, x, y):
         """
@@ -121,17 +102,12 @@ class Mapa:
 
         sala.grab_set()
 
-        tesouros_restantes = self.sala_estados[(x, y)]
+        tesouros_restantes = self.mapa.sala_estados[(x, y)]
 
         def coletar_tesouro(idx):
-            if tesouros_restantes[idx]:
-                tesouros_restantes[idx] = False
+            if self.mapa.coletar_tesouro_sala(x, y, idx):
                 botoes[idx]["state"] = "disabled"
                 botoes[idx]["bg"] = "gray"
-                self.salas_tesouro[(x, y)] -= 1
-                print(f"Tesouros restantes na sala ({x}, {y}): {self.salas_tesouro[(x, y)]}")
-                if self.salas_tesouro[(x, y)] == 0:
-                    print(f"Todos os tesouros da sala ({x}, {y}) foram coletados!")
 
         botoes = []
         for i in range(4):
@@ -150,13 +126,12 @@ class Mapa:
                 return
             print(f"Tempo esgotado na sala ({x}, {y})!")
             sala.destroy()
-            self.sala_semaforos[(x, y)].release()
-            print(f"Jogador saiu da sala do tesouro em ({x}, {y})!")
+            self.mapa.liberar_sala(x, y)
 
         def sair_voluntariamente():
             print(f"Jogador saiu voluntariamente da sala ({x}, {y})!")
             sala.destroy()
-            self.sala_semaforos[(x, y)].release()
+            self.mapa.liberar_sala(x, y)
             if hasattr(self, 'timer') and self.timer.is_alive():
                 self.timer.cancel()
 
@@ -179,5 +154,7 @@ class Mapa:
 if __name__ == "__main__":
     janela = tk.Tk()
     cliente = None
-    mapa = Mapa(janela, cliente)
+    servidor = None
+    jogo = Jogo(janela, cliente, servidor)
     janela.mainloop()
+
