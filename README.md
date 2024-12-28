@@ -4,6 +4,10 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
 
 ## Estrutura do Projeto
 
+- **Servidor**: `server/servidor.py`
+- **Mapa do Servidor**: `map/mapa.py`
+- **Cliente**: `client/cliente.py`
+
 ## Requisitos
 
 - Python 3.x
@@ -39,8 +43,6 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
 - **Salas do Tesouro**: Os jogadores podem acessar salas do tesouro para coletar mais tesouros.
 - **Comunicação Cliente-Servidor**: O estado do jogo é sincronizado entre os clientes através do servidor.
 
-## Arquivos Principais
+## Documentação
 
-- **Servidor**: servidor.py
-- **Mapa do Servidor**: mapa.py
-- **Cliente**: cliente.py
+Para mais detalhes sobre o funcionamento do jogo e a implementação, consulte a [Documentação](Documentacao.md).
