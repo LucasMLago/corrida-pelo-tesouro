@@ -68,7 +68,7 @@ class Jogo:
                     print(f"Tesouros restantes no mapa principal: {self.mapa.tesouros_restantes}")
 
                     if self.mapa.tesouros_restantes == 0:
-                        print("Todos os tesouros do mapa principal foram coletados!")
+                        print("Todos os tesouros do mapa principal foram coletados")
 
     def opcao_sala_do_tesouro(self, x, y):
         """
@@ -124,12 +124,12 @@ class Jogo:
         def fechar_sala():
             if not sala.winfo_exists():
                 return
-            print(f"Tempo esgotado na sala ({x}, {y})!")
+            print(f"Tempo esgotado na sala ({x}, {y})")
             sala.destroy()
             self.mapa.liberar_sala(x, y)
 
         def sair_voluntariamente():
-            print(f"Jogador saiu voluntariamente da sala ({x}, {y})!")
+            print(f"Jogador saiu voluntariamente da sala ({x}, {y})")
             sala.destroy()
             self.mapa.liberar_sala(x, y)
             if hasattr(self, 'timer') and self.timer.is_alive():
