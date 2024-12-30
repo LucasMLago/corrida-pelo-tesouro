@@ -16,10 +16,13 @@ class Mapa:
     Classe que representa o mapa do jogo.
     """
 
-    def __init__(self):
+    def __init__(self, seed=None):
         """
         Inicializa o mapa.
         """
+        if seed is not None:
+            random.seed(seed)
+            
         self.mapa_estado = [[False for _ in range(COLUNAS)] for _ in range(LINHAS)]
         self.tesouros_restantes = TESOUROS_MAPA
         self.mutex_global = threading.Lock()
@@ -28,6 +31,11 @@ class Mapa:
         self.sala_semaforos = {}
         self.sala_estados = {}
         self.tesouros_mapa = set(random.sample([(i, j) for i in range(LINHAS) for j in range(COLUNAS)], TESOUROS_MAPA))
+
+        # Reset the random seed after generating the map
+        if seed is not None:
+            random.seed()
+
         for i in range(LINHAS):
             for j in range(COLUNAS):
                 if (i, j) not in self.tesouros_mapa:

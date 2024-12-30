@@ -11,13 +11,13 @@ class Jogo:
     Classe que representa o jogo.
     """
 
-    def __init__(self, janela, cliente=None, servidor=None):
+    def __init__(self, janela, cliente=None, servidor=None, seed=None):
         """
         Inicializa o jogo.
         """
         self.cliente = cliente
         self.servidor = servidor
-        self.mapa = servidor.mapa if servidor else Mapa()
+        self.mapa = servidor.mapa if servidor else Mapa(seed=seed)
         self.janela = janela
         self.buttons = []
         self.timer = None

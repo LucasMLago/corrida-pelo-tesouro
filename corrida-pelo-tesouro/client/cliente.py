@@ -21,8 +21,17 @@ class Cliente:
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
+        
+        # Aguarda receber a seed antes de criar o jogo
+        msg = self.sock.recv(1024).decode('utf-8')
+        if msg.startswith("SEED"):
+            _, seed = msg.split()
+            self.map_seed = int(seed)
+        else:
+            self.map_seed = None
+            
         self.janela = tk.Tk()
-        self.jogo = Jogo(self.janela, cliente=self)
+        self.jogo = Jogo(self.janela, cliente=self, seed=self.map_seed)
         threading.Thread(target=self.ouvir_servidor).start()
 
     def ouvir_servidor(self):

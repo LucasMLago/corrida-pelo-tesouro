@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 import sys
 import os
+import random
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.mapa import Mapa
@@ -21,7 +22,8 @@ class Servidor:
         self.port = port
         self.clientes = []
         self.lock = threading.Lock()
-        self.mapa = Mapa()
+        self.map_seed = random.randint(1, 1000000)
+        self.mapa = Mapa(seed=self.map_seed)
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     def iniciar(self):
@@ -124,6 +126,10 @@ class Servidor:
         Envia o estado inicial do mapa para um cliente recém-conectado.
         """
         with self.lock:
+            # Primeiro envia a seed
+            cliente.send(f"SEED {self.map_seed}".encode('utf-8'))
+            
+            # Depois envia o estado dos tesouros
             for i in range(8):
                 for j in range(8):
                     if self.mapa.mapa_estado[i][j]:
