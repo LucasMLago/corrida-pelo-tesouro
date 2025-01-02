@@ -69,6 +69,8 @@ class Jogo:
 
                     if self.mapa.tesouros_restantes == 0:
                         print("Todos os tesouros do mapa principal foram coletados")
+                    if self.cliente:
+                        self.cliente.enviar_log(f"Coletou tesouro em ({x}, {y})")
 
     def opcao_sala_do_tesouro(self, x, y):
         """
@@ -80,6 +82,8 @@ class Jogo:
         popup = tk.Toplevel(self.janela)
         popup.title("Gostaria de Entrar?")
         self.centralizar_janela(popup, 200, 150)
+        
+        popup.grab_set()
 
         tk.Label(popup, text="Deseja entrar na sala do tesouro?").pack(pady=10)
         tk.Button(popup, text="Sim", bg="green", fg="white", command=lambda: [popup.destroy(), entrar_na_sala()], width=15, height=2).pack(pady=5)
@@ -90,6 +94,7 @@ class Jogo:
         Controla o acesso à sala do tesouro específica.
         """
         if self.mapa.acessar_sala_do_tesouro(x, y):
+            self.cliente.enviar_log(f"Acessou sala do tesouro em ({x}, {y})")
             self.abrir_sala_do_tesouro(x, y)
 
     def abrir_sala_do_tesouro(self, x, y):
@@ -106,6 +111,7 @@ class Jogo:
 
         def coletar_tesouro(idx):
             if self.mapa.coletar_tesouro_sala(x, y, idx):
+                self.cliente.enviar_log(f"Coletou tesouro na sala ({x}, {y}) no índice {idx}")
                 botoes[idx]["state"] = "disabled"
                 botoes[idx]["bg"] = "gray"
 

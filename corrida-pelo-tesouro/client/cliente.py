@@ -55,14 +55,23 @@ class Cliente:
             _, x, y = msg.split()
             x, y = int(x), int(y)
             self.jogo.coletar_tesouro(x, y, atualizar_servidor=False)
+            self.enviar_log(f"Tesouro coletado em ({x}, {y})")
         elif msg.startswith("ENTRAR_SALA"):
             _, x, y = msg.split()
             x, y = int(x), int(y)
             self.jogo.acessar_sala_do_tesouro(x, y)
+            self.enviar_log(f"Sala acessada em ({x}, {y})")
         elif msg.startswith("COLETAR_TESOURO_SALA"):
             _, x, y, idx = msg.split()
             x, y, idx = int(x), int(y), int(idx)
             self.jogo.coletar_tesouro_sala(x, y, idx)
+            self.enviar_log(f"Tesouro coletado na sala em ({x}, {y}) com índice {idx}")
+
+    def enviar_log(self, log_msg):
+        """
+        Envia uma mensagem de log para o servidor.
+        """
+        self.enviar_mensagem(f"LOG {log_msg}")
 
     def enviar_mensagem(self, msg):
         """

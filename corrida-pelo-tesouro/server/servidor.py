@@ -1,7 +1,6 @@
 import socket
 import threading
 import logging
-from datetime import datetime
 import sys
 import os
 import random
@@ -70,12 +69,14 @@ class Servidor:
         """
         Trata as mensagens recebidas dos clientes.
         """
-        if msg.startswith("COLETAR_TESOURO"):
+        if msg.startswith("LOG"):
+            self.tratar_log_cliente(msg, client_address)
+        elif msg.startswith("COLETAR_TESOURO"):
             _, x, y = msg.split()
             x, y = int(x), int(y)
             self.mapa.coletar_tesouro(x, y)
             self.broadcast(msg, cliente)
-            logging.info(f"O Jogador {client_address} coletou um tesouro: {msg}")
+            logging.info(f"Tesouro coletado por {client_address}: ({x}, {y})")
         elif msg.startswith("ACESSAR_SALA"):
             _, x, y = msg.split()
             x, y = int(x), int(y)
@@ -92,7 +93,13 @@ class Servidor:
             self.mapa.liberar_sala(x, y)
         elif msg == "SAIR_DO_JOGO":
             self.remover_cliente(cliente, client_address)
-            logging.info(f"O Jogador {client_address} saiu do jogo.")
+            logging.info(f"Jogador {client_address} saiu do jogo.")
+
+    def tratar_log_cliente(self, msg, client_address):
+        """
+        Trata as mensagens de log recebidas dos clientes.
+        """
+        _, log_msg = msg.split(" ", 1)
 
     def remover_cliente(self, cliente, client_address=None):
         """
@@ -119,17 +126,14 @@ class Servidor:
         Registra uma ação realizada por um cliente.
         """
         if "SAIR_DO_JOGO" not in msg:
-            logging.info(f"O Jogador {client_address}: {msg}")
+            logging.info(f"Cliente {client_address}: {msg}")
 
     def enviar_estado_inicial(self, cliente):
         """
         Envia o estado inicial do mapa para um cliente recém-conectado.
         """
         with self.lock:
-            # Primeiro envia a seed
             cliente.send(f"SEED {self.map_seed}".encode('utf-8'))
-            
-            # Depois envia o estado dos tesouros
             for i in range(8):
                 for j in range(8):
                     if self.mapa.mapa_estado[i][j]:
