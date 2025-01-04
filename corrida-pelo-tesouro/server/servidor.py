@@ -5,6 +5,11 @@ import random
 from threading import Semaphore
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
+IP_PRIVADO = os.getenv("IP_PRIVADO")
+PORTA = os.getenv("PORTA")
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.mapa import Mapa
@@ -34,7 +39,7 @@ class Servidor:
         salas_tesouro_locks (dict): Dicionário para armazenar os semáforos de cada sala do tesouro.
         estado_salas_tesouro (dict): Dicionário para armazenar o estado de coleta de cada sala do tesouro.
     """
-    def __init__(self, host="localhost", port=8080, tamanho_mapa=(8, 8), max_tesouros_mapa=10, tamanho_sala_tesouro=(4, 4), max_tesouros_sala=16):
+    def __init__(self, host=IP_PRIVADO, port=PORTA, tamanho_mapa=(8, 8), max_tesouros_mapa=10, tamanho_sala_tesouro=(4, 4), max_tesouros_sala=16):
         """
         Inicializa a classe Servidor com os parâmetros do jogo.
         
@@ -172,9 +177,10 @@ class Servidor:
                     if self.todos_tesouros_mapa_principal_coletados():
                         print("Todos os tesouros do mapa principal foram coletados")
                         client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros do mapa principal foram coletados <<<{colors.ENDC}\n".encode())
-            self.atualizar_mapas_para_todos_jogadores()
+            # self.atualizar_mapas_para_todos_jogadores()
+            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado ao jogador
 
-        elif comando == "entrar":
+        elif comando.startswith("ent"):
             if self.mapa_principal.eh_sala_tesouro(jogador_pos):
                 if jogador_pos not in self.salas_tesouro:
                     self.salas_tesouro[jogador_pos] = Mapa(self.linhas_sala_tesouro, self.colunas_sala_tesouro)  # Criando um novo mapa da sala do tesouro
@@ -189,14 +195,15 @@ class Servidor:
                         self.jogadores[jogador_id]["na_sala_tesouro"] = False  # Jogador fora da sala do tesouro
                         self.salas_tesouro_locks[jogador_pos].release()
                     else:
-                        client_socket.send(f"\n{colors.RED}>>> A sala do tesouro está ocupada por outro jogador <<<{colors.RED}\n".encode())
+                        client_socket.send(f"\n{colors.RED}>>> A sala do tesouro está ocupada por outro jogador <<<{colors.ENDC}\n".encode())
                 else:
                     client_socket.send(f"{colors.RED}Você não pode entrar em um Tesouro que já foi coletado{colors.ENDC}\n".encode())
             else:
                 client_socket.send(f"{colors.RED}Você não está em uma sala do tesouro{colors.ENDC}\n".encode())
-            self.atualizar_mapas_para_todos_jogadores()
+            # self.atualizar_mapas_para_todos_jogadores()
+            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado ao jogador
 
-        elif comando == "sair":
+        elif comando.startswith("sai"):
             print(f"Jogador {jogador_id} desconectado.")
             self.log_acao_jogador(jogador_id, "desconectou-se do jogo")
             del self.jogadores[jogador_id]
@@ -248,7 +255,7 @@ class Servidor:
                             self.mapa_principal.celulas[x][y] = f"{colors.RED}x{colors.ENDC}"
                             client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros desta sala foram coletados <<<{colors.ENDC}\n".encode())
                             print(f"Todos os tesouros da sala {(x, y)} foram coletados")
-                elif comando == "sair":
+                elif comando.startswith("sai"):
                     self.log_acao_jogador(jogador_id, "saiu da sala do tesouro")
                     client_socket.send("Você saiu da sala do tesouro.\n".encode())
                     break

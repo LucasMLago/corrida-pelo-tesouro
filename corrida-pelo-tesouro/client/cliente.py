@@ -1,6 +1,12 @@
 import socket
 import threading
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+IP_PUBLICO = os.getenv("IP_PUBLICO")
+PORTA = os.getenv("PORTA")
 
 class Cliente:
     """
@@ -12,7 +18,7 @@ class Cliente:
         socket (socket.socket): Socket para comunicação com o servidor.
         in_treasure_room (bool): Indica se o jogador está na sala do tesouro.
     """
-    def __init__(self, host="localhost", port=8080):
+    def __init__(self, host=IP_PUBLICO, port=PORTA):
         """
         Inicializa a classe Cliente com o endereço e porta do servidor.
         
