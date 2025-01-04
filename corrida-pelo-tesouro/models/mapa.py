@@ -84,8 +84,6 @@ class Mapa:
         Returns:
             bool: True se todos os tesouros foram coletados, False caso contrário.
         """
-        print(len(self.tesouros))
-        print(self.tesouros)
         return len(self.tesouros) == 0
 
     def eh_sala_tesouro(self, pos):

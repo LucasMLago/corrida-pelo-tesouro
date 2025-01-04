@@ -169,6 +169,9 @@ class Servidor:
                         self.log_acao_jogador(jogador_id, "coletou um tesouro em", nova_pos)
                         if self.todos_tesouros_coletados():
                             self.exibir_ranking()
+                    if self.todos_tesouros_mapa_principal_coletados():
+                        print("Todos os tesouros do mapa principal foram coletados")
+                        client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros do mapa principal foram coletados <<<{colors.ENDC}\n".encode())
             self.atualizar_mapas_para_todos_jogadores()
 
         elif comando == "entrar":
@@ -285,6 +288,9 @@ class Servidor:
                 return False
         return True
     
+    def todos_tesouros_mapa_principal_coletados(self):
+        return self.mapa_principal.todos_tesouros_coletados()
+    
     def todos_tesouros_coletados(self):
         """
         Verifica se todos os tesouros do mapa principal e das salas do tesouro foram coletados.
@@ -292,7 +298,7 @@ class Servidor:
         Returns:
             bool: True se todos os tesouros foram coletados, False caso contrário.
         """
-        return self.mapa_principal.todos_tesouros_coletados() and self.todos_tesouros_salas_tesouro_coletados()
+        return self.todos_tesouros_mapa_principal_coletados() and self.todos_tesouros_salas_tesouro_coletados()
     
     def exibir_ranking(self):
         """
