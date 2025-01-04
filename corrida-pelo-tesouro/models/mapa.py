@@ -34,6 +34,7 @@ class Mapa:
             sala_tesouro (bool): Indica se os tesouros estão sendo inicializados em uma sala do tesouro.
         """
         if sala_tesouro:
+            self.tesouros = []  # Limpa qualquer tesouro existente antes de preencher com os tesouros da sala do tesouro
             for i in range(self.linhas):
                 for j in range(self.colunas):
                     self.celulas[i][j] = f"{colors.GOLD}T{colors.ENDC}"
@@ -83,6 +84,8 @@ class Mapa:
         Returns:
             bool: True se todos os tesouros foram coletados, False caso contrário.
         """
+        print(len(self.tesouros))
+        print(self.tesouros)
         return len(self.tesouros) == 0
 
     def eh_sala_tesouro(self, pos):

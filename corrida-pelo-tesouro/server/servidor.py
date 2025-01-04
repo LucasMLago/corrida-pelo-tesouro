@@ -190,7 +190,7 @@ class Servidor:
                 else:
                     client_socket.send(f"{colors.RED}Você não pode entrar em um Tesouro que já foi coletado{colors.ENDC}\n".encode())
             else:
-                client_socket.send(f"{colors.RED}Você não está em uma posição de sala do tesouro{colors.ENDC}\n".encode())
+                client_socket.send(f"{colors.RED}Você não está em uma sala do tesouro{colors.ENDC}\n".encode())
             self.atualizar_mapas_para_todos_jogadores()
 
         elif comando == "sair":
@@ -239,6 +239,12 @@ class Servidor:
                             self.jogadores[jogador_id]["pontos"] += 1  # Pontos do jogador
                             client_socket.send(f"\n{colors.OKGREEN}>>> Tesouro coletado <<<{colors.ENDC}\n".encode())
                             self.log_acao_jogador(jogador_id, "coletou um tesouro em", nova_pos)
+                        if self.sala_tesouro.todos_tesouros_coletados():
+                            self.estado_salas_tesouro[posicao_anterior] = True
+                            x, y = posicao_anterior
+                            self.mapa_principal.celulas[x][y] = f"{colors.RED}x{colors.ENDC}"
+                            client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros desta sala foram coletados <<<{colors.ENDC}\n".encode())
+                            print(f"Todos os tesouros da sala {(x, y)} foram coletados")
                 elif comando == "sair":
                     self.log_acao_jogador(jogador_id, "saiu da sala do tesouro")
                     client_socket.send("Você saiu da sala do tesouro.\n".encode())
@@ -256,12 +262,6 @@ class Servidor:
 
         if tempo_restante <= 0:
             client_socket.send(f"\n{colors.RED}>>> Tempo esgotado :( <<<{colors.ENDC}\n".encode())
-        
-        if self.sala_tesouro.todos_tesouros_coletados():
-            self.estado_salas_tesouro[(x, y)] = True
-            self.mapa_principal.celulas[x][y] = f"{colors.RED}x{colors.ENDC}"
-            client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros desta sala foram coletados <<<{colors.ENDC}\n".encode())
-            print(f"Todos os tesouros da sala {(x, y)} foram coletados")
 
         self.jogadores[jogador_id]["pos"] = posicao_anterior  # Retorna o jogador à posição anterior no mapa principal
         self.jogadores[jogador_id]["pos_anterior"] = posicao_anterior  # Garante que a posição anterior seja atualizada
