@@ -178,7 +178,7 @@ class Servidor:
                     else:
                         client_socket.send(f"\n{colors.RED}>>> A sala do tesouro está ocupada por outro jogador <<<{colors.RED}\n".encode())
             else:
-                client_socket.send(f"{colors.RED}Todos os tesouros desta sala foram coletados e ela não pode mais ser acessada{colors.RED}\n".encode())
+                client_socket.send(f"{colors.RED}Todos os tesouros desta sala foram coletados e ela não pode mais ser acessada{colors.ENDC}\n".encode())
             self.atualizar_mapas_para_todos_jogadores()
 
         elif comando == "sair":
@@ -192,7 +192,7 @@ class Servidor:
             client_socket.close()
 
         else:
-            client_socket.send(f"{colors.RED}Movimento inválido, tente um comando válido{colors.RED}\n".encode())
+            client_socket.send(f"{colors.RED}Movimento inválido, tente um comando válido{colors.ENDC}\n".encode())
             client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa ao jogador
 
     def sala_do_tesouro(self, client_socket, jogador_id, posicao_anterior):
@@ -207,7 +207,7 @@ class Servidor:
         x, y = posicao_anterior
         client_socket.send(f"\n>>> Você entrou na sala do tesouro ({x, y}) <<<".encode())
         client_socket.send(f"\n{colors.RED}>>> Você tem 10 segundos para coletar os Tesouros dessa sala <<<{colors.ENDC}\n\n".encode())
-        jogador_pos = (0, 0)
+        jogador_pos = (random.randint(0, self.linhas_sala_tesouro - 1), random.randint(0, self.colunas_sala_tesouro - 1))
         self.jogadores[jogador_id]["pos"] = jogador_pos
         client_socket.send(self.sala_tesouro.exibir_mapa({jogador_id: {"pos": jogador_pos}}).encode())  # Envia o mapa da sala do tesouro
 
@@ -245,9 +245,8 @@ class Servidor:
         if tempo_restante <= 0:
             client_socket.send(f"\n{colors.RED}>>> Tempo esgotado :( <<<{colors.ENDC}\n".encode())
         
-        if not self.sala_tesouro.coletar_tesouro(jogador_pos):
-            x, y = posicao_anterior
-            self.estado_salas_tesouro[posicao_anterior] = True
+        if self.sala_tesouro.todos_tesouros_coletados():
+            self.estado_salas_tesouro[(x, y)] = True
             self.mapa_principal.celulas[x][y] = f"{colors.RED}x{colors.ENDC}"
             self.mapa_principal.coletar_tesouro((x, y))
             client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros desta sala foram coletados <<<{colors.ENDC}\n".encode())
