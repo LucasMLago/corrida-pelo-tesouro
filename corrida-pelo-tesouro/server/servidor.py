@@ -65,6 +65,18 @@ class Servidor:
         self.salas_tesouro = {}  # Dicionário para armazenar o estado de cada sala do tesouro
         self.salas_tesouro_locks = {}  # Dicionário para armazenar os semáforos de cada sala do tesouro
         self.estado_salas_tesouro = {}  # Dicionário para armazenar o estado de coleta de cada sala do tesouro
+        self.inicializar_salas_tesouro()
+
+    def inicializar_salas_tesouro(self):
+        """
+        Inicializa o estado das salas do tesouro no mapa principal.
+        """
+        for i in range(self.linhas_mapa_principal):
+            for j in range(self.colunas_mapa_principal):
+                if self.mapa_principal.eh_sala_tesouro((i, j)):
+                    self.estado_salas_tesouro[(i, j)] = False # Inicializa o estado da sala do tesouro como não coletada
+                    self.salas_tesouro_locks[(i, j)] = Semaphore(1) # Inicializa os semáforos das salas do tesouro
+                    
 
     def iniciar(self):
         """
@@ -102,7 +114,7 @@ class Servidor:
         """
         jogador_id = len(self.jogadores) + 1
         pos_inicial = self.mapa_principal.posicao_aleatoria()
-        self.jogadores[jogador_id] = {"socket": client_socket, "pos": pos_inicial, "pontos": 0}  # Add pontos to track player points
+        self.jogadores[jogador_id] = {"socket": client_socket, "pos": pos_inicial, "pontos": 0}
         
         client_socket.send(f"\nBem-vindo ao jogo! Você é o jogador {jogador_id}\n\n".encode())
         client_socket.send(self.exibir_instrucoes().encode())
@@ -149,10 +161,10 @@ class Servidor:
             if self.mapa_principal.valida_posicao(nova_pos):
                 with self.lock_mapa:
                     self.jogadores[jogador_id]["pos"] = nova_pos
-                    self.jogadores[jogador_id]["pos_anterior"] = nova_pos  # Update the previous position
+                    self.jogadores[jogador_id]["pos_anterior"] = nova_pos  # atualiza a posição anterior do jogador
                     self.log_acao_jogador(jogador_id, "moveu-se para", nova_pos)
                     if self.mapa_principal.coletar_tesouro(nova_pos):
-                        self.jogadores[jogador_id]["pontos"] += 1  # Increment player points
+                        self.jogadores[jogador_id]["pontos"] += 1  # Pontos do jogador
                         client_socket.send(f"\n{colors.OKGREEN}>>> Tesouro coletado <<<{colors.ENDC}\n".encode())
                         self.log_acao_jogador(jogador_id, "coletou um tesouro em", nova_pos)
                         if self.todos_tesouros_coletados():
@@ -164,21 +176,21 @@ class Servidor:
                 if jogador_pos not in self.salas_tesouro:
                     self.salas_tesouro[jogador_pos] = Mapa(self.linhas_sala_tesouro, self.colunas_sala_tesouro)  # Criando um novo mapa da sala do tesouro
                     self.salas_tesouro[jogador_pos].inicializar_tesouros(quantidade=self.max_tesouros_sala, sala_tesouro=True)  # Inicializa a sala com tesouros
-                    self.salas_tesouro_locks[jogador_pos] = Semaphore(1)  # Inicializa o semáforo da sala do tesouro
-                    self.estado_salas_tesouro[jogador_pos] = False  # Inicializa o estado da sala do tesouro como não coletada
-                if not self.estado_salas_tesouro.get(jogador_pos, False):  # Check if the room is not fully collected
+                if not self.estado_salas_tesouro.get(jogador_pos, False):  # Verifica se todos os tesouros da sala do tesouro já foram coletados
                     if self.salas_tesouro_locks[jogador_pos].acquire(blocking=False):
                         self.sala_tesouro = self.salas_tesouro[jogador_pos]
                         self.log_acao_jogador(jogador_id, "entrou na sala do tesouro")
-                        self.jogadores[jogador_id]["na_sala_tesouro"] = True  # Mark player as in treasure room
-                        self.jogadores[jogador_id]["pos_anterior"] = self.jogadores[jogador_id]["pos"]  # Save previous position
+                        self.jogadores[jogador_id]["na_sala_tesouro"] = True  # Jogador dentro da sala do tesouro
+                        self.jogadores[jogador_id]["pos_anterior"] = self.jogadores[jogador_id]["pos"]  # Salva a última posição do jogador
                         self.sala_do_tesouro(client_socket, jogador_id, jogador_pos)
-                        self.jogadores[jogador_id]["na_sala_tesouro"] = False  # Mark player as out of treasure room
+                        self.jogadores[jogador_id]["na_sala_tesouro"] = False  # Jogador fora da sala do tesouro
                         self.salas_tesouro_locks[jogador_pos].release()
                     else:
                         client_socket.send(f"\n{colors.RED}>>> A sala do tesouro está ocupada por outro jogador <<<{colors.RED}\n".encode())
+                else:
+                    client_socket.send(f"{colors.RED}Você não pode entrar em um Tesouro que já foi coletado{colors.ENDC}\n".encode())
             else:
-                client_socket.send(f"{colors.RED}Todos os tesouros desta sala foram coletados e ela não pode mais ser acessada{colors.ENDC}\n".encode())
+                client_socket.send(f"{colors.RED}Você não está em uma posição de sala do tesouro{colors.ENDC}\n".encode())
             self.atualizar_mapas_para_todos_jogadores()
 
         elif comando == "sair":
@@ -224,7 +236,7 @@ class Servidor:
                         self.jogadores[jogador_id]["pos"] = jogador_pos
                         self.log_acao_jogador(jogador_id, "moveu-se para", nova_pos)
                         if self.sala_tesouro.coletar_tesouro(nova_pos):
-                            self.jogadores[jogador_id]["pontos"] += 1  # Increment player points
+                            self.jogadores[jogador_id]["pontos"] += 1  # Pontos do jogador
                             client_socket.send(f"\n{colors.OKGREEN}>>> Tesouro coletado <<<{colors.ENDC}\n".encode())
                             self.log_acao_jogador(jogador_id, "coletou um tesouro em", nova_pos)
                 elif comando == "sair":
@@ -248,12 +260,11 @@ class Servidor:
         if self.sala_tesouro.todos_tesouros_coletados():
             self.estado_salas_tesouro[(x, y)] = True
             self.mapa_principal.celulas[x][y] = f"{colors.RED}x{colors.ENDC}"
-            self.mapa_principal.coletar_tesouro((x, y))
             client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros desta sala foram coletados <<<{colors.ENDC}\n".encode())
             print(f"Todos os tesouros da sala {(x, y)} foram coletados")
 
         self.jogadores[jogador_id]["pos"] = posicao_anterior  # Retorna o jogador à posição anterior no mapa principal
-        self.jogadores[jogador_id]["pos_anterior"] = posicao_anterior  # Ensure the previous position is updated
+        self.jogadores[jogador_id]["pos_anterior"] = posicao_anterior  # Garante que a posição anterior seja atualizada
         self.sala_tesouro = None
         for jogador in self.jogadores.values():
             if not jogador.get("na_sala_tesouro", False):
@@ -307,8 +318,8 @@ class Servidor:
         Atualiza o mapa para todos os jogadores conectados.
         """
         mapa_atualizado = self.mapa_principal.exibir_mapa(self.jogadores, posicao_do_jogador="pos_anterior").encode()
-        for jogador_id, jogador in self.jogadores.items():
-            if not jogador.get("na_sala_tesouro", False):  # Ensure the map is not updated for players in the treasure room
+        for _, jogador in self.jogadores.items():
+            if not jogador.get("na_sala_tesouro", False):
                 try:
                     jogador["socket"].send(mapa_atualizado)
                 except:
