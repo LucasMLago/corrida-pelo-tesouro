@@ -19,9 +19,16 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
 
 ## Requisitos
 
-- Python 3.x
-- Biblioteca `socket` (inclusa na biblioteca padrão do Python)
-- Biblioteca `threading` (inclusa na biblioteca padrão do Python)
+- **Python 3**
+- **Bibliotecas padrão do Python**:
+  - `socket`: Utilizada para comunicação entre cliente e servidor.
+  - `threading`: Utilizada para gerenciar múltiplas conexões de clientes simultaneamente.
+  - `socket`: Utilizado para gerenciar as salas do tesouro com Semáforos e criação da interação Cliente-Servidor
+  - `time`: Utilizada para gerenciar temporizações no jogo.
+  - `random`: Utilizada para gerar posições aleatórias no mapa.
+  - `os`: Utilizada para interações com o sistema operacional, como manipulação de arquivos e diretórios.
+  - `sys`: Utilizada para manipular parâmetros e funções do sistema.
+- **Sistema Operacional**: O código deve funcionar em qualquer sistema operacional que suporte Python 3.x, incluindo Windows, macOS e Linux.
 
 ## Como Rodar o Código
 
