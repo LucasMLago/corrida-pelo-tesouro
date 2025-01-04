@@ -1,92 +1,75 @@
 import socket
 import threading
-import tkinter as tk
-import logging
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.jogo import Jogo
+import time
 
 class Cliente:
     """
-    Classe que representa o cliente do jogo.
+    Classe Cliente para conectar ao servidor do jogo Corrida Pelo Tesouro.
+    
+    Atributos:
+        host (str): Endereço do servidor.
+        port (int): Porta do servidor.
+        socket (socket.socket): Socket para comunicação com o servidor.
+        in_treasure_room (bool): Indica se o jogador está na sala do tesouro.
     """
-
-    def __init__(self, host='localhost', port=8080):
+    def __init__(self, host="localhost", port=8080):
         """
-        Inicializa o cliente.
+        Inicializa a classe Cliente com o endereço e porta do servidor.
+        
+        Args:
+            host (str): Endereço do servidor. Padrão é "localhost".
+            port (int): Porta do servidor. Padrão é 8080.
         """
         self.host = host
         self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
-        
-        # Aguarda receber a seed antes de criar o jogo
-        msg = self.sock.recv(1024).decode('utf-8')
-        if msg.startswith("SEED"):
-            _, seed = msg.split()
-            self.map_seed = int(seed)
-        else:
-            self.map_seed = None
-            
-        self.janela = tk.Tk()
-        self.jogo = Jogo(self.janela, cliente=self, seed=self.map_seed)
-        threading.Thread(target=self.ouvir_servidor).start()
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.in_treasure_room = False
 
-    def ouvir_servidor(self):
+    def conectar(self):
         """
-        Ouve mensagens do servidor.
+        Conecta ao servidor e inicia as threads para receber mensagens e enviar comandos.
+        """
+        try:
+            self.socket.connect((self.host, self.port))
+            time.sleep(0.1)
+            threading.Thread(target=self.receber_mensagens).start()
+            self.enviar_comandos()
+        except Exception as e:
+            print(f"Erro ao conectar ao servidor: {e}")
+
+    def receber_mensagens(self):
+        """
+        Recebe mensagens do servidor e as exibe no console.
         """
         while True:
             try:
-                msg = self.sock.recv(1024).decode('utf-8')
-                if not msg:
+                mensagem = self.socket.recv(1024).decode()
+                print(mensagem)
+                if "Saindo do jogo..." in mensagem:
+                    self.socket.close()  # Fecha o socket do cliente
                     break
-                self.tratar_mensagem(msg)
-            except socket.error:
+                elif "Você saiu da sala do tesouro." in mensagem:
+                    self.in_treasure_room = False
+            except:
+                print("Conexão com o servidor foi perdida.")
                 break
 
-    def tratar_mensagem(self, msg):
+    def enviar_comandos(self):
         """
-        Trata as mensagens recebidas do servidor.
+        Envia comandos do jogador para o servidor.
         """
-        if msg.startswith("COLETAR_TESOURO"):
-            _, x, y = msg.split()
-            x, y = int(x), int(y)
-            self.jogo.coletar_tesouro(x, y, atualizar_servidor=False)
-            self.enviar_log(f"Tesouro coletado em ({x}, {y})")
-        elif msg.startswith("ENTRAR_SALA"):
-            _, x, y = msg.split()
-            x, y = int(x), int(y)
-            self.jogo.acessar_sala_do_tesouro(x, y)
-            self.enviar_log(f"Sala acessada em ({x}, {y})")
-        elif msg.startswith("COLETAR_TESOURO_SALA"):
-            _, x, y, idx = msg.split()
-            x, y, idx = int(x), int(y), int(idx)
-            self.jogo.coletar_tesouro_sala(x, y, idx)
-            self.enviar_log(f"Tesouro coletado na sala em ({x}, {y}) com índice {idx}")
-
-    def enviar_log(self, log_msg):
-        """
-        Envia uma mensagem de log para o servidor.
-        """
-        self.enviar_mensagem(f"LOG {log_msg}")
-
-    def enviar_mensagem(self, msg):
-        """
-        Envia uma mensagem para o servidor.
-        """
-        self.sock.send(msg.encode('utf-8'))
-
-    def sair_do_jogo(self):
-        """
-        Envia uma mensagem de saída para o servidor e fecha a conexão.
-        """
-        self.enviar_mensagem("SAIR_DO_JOGO")
-        self.sock.close()
+        while True:
+            time.sleep(0.1)
+            if self.in_treasure_room:
+                comando = input("Digite um comando (w, a, s, d, sair): ")
+            else:
+                comando = input("Digite um comando (w, a, s, d, entrar, sair): ")
+            self.socket.send(comando.encode())
+            if comando == "sair" and not self.in_treasure_room:
+                break
+            elif comando == "entrar":
+                self.in_treasure_room = True
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     cliente = Cliente()
-    cliente.janela.mainloop()
+    cliente.conectar()
