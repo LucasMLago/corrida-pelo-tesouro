@@ -178,7 +178,7 @@ class Servidor:
                         print("Todos os tesouros do mapa principal foram coletados")
                         client_socket.send(f"\n{colors.OKGREEN}>>> Todos os tesouros do mapa principal foram coletados <<<{colors.ENDC}\n".encode())
             # self.atualizar_mapas_para_todos_jogadores()
-            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado ao jogador
+            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores, posicao_do_jogador="pos_anterior").encode())  # Envia o mapa atualizado ao jogador
 
         elif comando.startswith("ent"):
             if self.mapa_principal.eh_sala_tesouro(jogador_pos):
@@ -201,7 +201,7 @@ class Servidor:
             else:
                 client_socket.send(f"{colors.RED}Você não está em uma sala do tesouro{colors.ENDC}\n".encode())
             # self.atualizar_mapas_para_todos_jogadores()
-            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado ao jogador
+            client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores, posicao_do_jogador="pos_anterior").encode())  # Envia o mapa atualizado ao jogador
 
         elif comando.startswith("sai"):
             print(f"Jogador {jogador_id} desconectado.")
@@ -276,9 +276,7 @@ class Servidor:
         self.jogadores[jogador_id]["pos"] = posicao_anterior  # Retorna o jogador à posição anterior no mapa principal
         self.jogadores[jogador_id]["pos_anterior"] = posicao_anterior  # Garante que a posição anterior seja atualizada
         self.sala_tesouro = None
-        for jogador in self.jogadores.values():
-            if not jogador.get("na_sala_tesouro", False):
-                jogador["socket"].send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado a todos os jogadores
+        client_socket.send(self.mapa_principal.exibir_mapa(self.jogadores).encode())  # Envia o mapa atualizado ao jogador que saiu da sala do tesouro
         
         if self.todos_tesouros_coletados():
             self.exibir_ranking()
