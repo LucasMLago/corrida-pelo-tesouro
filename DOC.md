@@ -48,12 +48,12 @@ if comando == "entrar":
     if self.mapa_principal.eh_sala_tesouro(jogador_pos):
         if jogador_pos not in self.salas_tesouro:
             self.salas_tesouro[jogador_pos] = Mapa(self.linhas_sala_tesouro, self.colunas_sala_tesouro)
-            self.salas_tesouro[jogador_pos].inicializar_tesouros(quantidade=self.max_tesouros_sala, sala_tesouro=True)
+            self.salas_tesouros[jogador_pos].inicializar_tesouros(quantidade=self.max_tesouros_sala, sala_tesouro=True)
             self.salas_tesouro_locks[jogador_pos] = Semaphore(1)
             self.estado_salas_tesouro[jogador_pos] = False
         if not self.estado_salas_tesouro.get(jogador_pos, False):
             if self.salas_tesouro_locks[jogador_pos].acquire(blocking=False):
-                self.sala_tesouro = self.salas_tesouro[jogador_pos]
+                self.sala_tesouro = self.salas_tesouros[jogador_pos]
                 self.jogadores[jogador_id]["na_sala_tesouro"] = True
                 self.jogadores[jogador_id]["pos_anterior"] = self.jogadores[jogador_id]["pos"]
                 self.sala_do_tesouro(client_socket, jogador_id, jogador_pos)

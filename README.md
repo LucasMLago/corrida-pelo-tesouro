@@ -30,6 +30,16 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
   - `sys`: Utilizada para manipular parâmetros e funções do sistema.
 - **Sistema Operacional**: O código deve funcionar em qualquer sistema operacional que suporte Python 3.x, incluindo Windows, macOS e Linux.
 
+## Configuração
+
+1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis de ambiente preenchidas como exemplo:
+
+    ```plaintext
+    IP_PRIVADO=localhost
+    IP_PUBLICO=localhost
+    PORTA=8080
+    ```
+
 ## Como Rodar o Código
 
 ### Servidor
