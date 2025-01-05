@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 IP_PUBLICO = os.getenv("IP_PUBLICO")
-PORTA = os.getenv("PORTA")
+PORTA = int(os.getenv("PORTA"))
 
 class Cliente:
     """

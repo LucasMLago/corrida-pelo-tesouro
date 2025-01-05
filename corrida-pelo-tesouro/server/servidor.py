@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 IP_PRIVADO = os.getenv("IP_PRIVADO")
-PORTA = os.getenv("PORTA")
+PORTA = int(os.getenv("PORTA"))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.mapa import Mapa
