@@ -28,7 +28,8 @@ Corrida Pelo Tesouro é um jogo multiplayer onde os jogadores competem para cole
   - `random`: Utilizada para gerar posições aleatórias no mapa.
   - `os`: Utilizada para interações com o sistema operacional, como manipulação de arquivos e diretórios.
   - `sys`: Utilizada para manipular parâmetros e funções do sistema.
-- **Sistema Operacional**: O código deve funcionar em qualquer sistema operacional que suporte Python 3.x, incluindo Windows, macOS e Linux.
+  - `python-dotenv`: Utilizada para manipulação de variáveis de ambiente
+- **Sistema Operacional**: O código deve funcionar em qualquer sistema operacional que suporte Python 3, incluindo Windows, macOS e Linux.
 
 ## Configuração
 
