@@ -1,6 +1,4 @@
-corrida-pelo-tesouro/server/__pycache__
-corrida-pelo-tesouro/client/__pycache__
-corrida-pelo-tesouro/models/__pycache__
+**/__pycache__/
 
 .env
 .venv
